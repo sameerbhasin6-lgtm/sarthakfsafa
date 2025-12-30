@@ -141,7 +141,7 @@ tab1, tab2 = st.tabs([
 # TAB 1: SCATTER
 # =====================================================
 with tab1:
-    st.subheader("Revenue vs Discretionary Accruals")
+st.markdown("## Revenue vs Discretionary Accruals")
 
     fig = px.scatter(
         features,
