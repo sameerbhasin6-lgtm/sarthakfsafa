@@ -171,13 +171,18 @@ with tab1:
         top_risks = latest_data.sort_values(by='Risk_Score', ascending=False).head(10)
         
         # Styling the dataframe for visual impact
+# Display top 10 riskiest companies (Fixed Version)
+        top_risks = latest_data.sort_values(by='Risk_Score', ascending=False).head(10)
+        
         st.dataframe(
-            top_risks[['Ticker', 'Risk_Score', 'Status', 'ADA_Ratio', 'Depreciation_Rate']]
-            .style.background_gradient(subset=['Risk_Score'], cmap='Reds')
-            .format({'Risk_Score': "{:.1f}", 'ADA_Ratio': "{:.2%}", 'Depreciation_Rate': "{:.2%}"}),
+            top_risks[['Ticker', 'Risk_Score', 'Status', 'ADA_Ratio', 'Depreciation_Rate']],
+            column_config={
+                "ADA_Ratio": st.column_config.NumberColumn(label="ADA Ratio", format="%.2f%%"),
+                "Depreciation_Rate": st.column_config.NumberColumn(label="Depr. Rate", format="%.2f%%"),
+                "Risk_Score": st.column_config.NumberColumn(label="Risk Score", format="%.1f"),
+            },
             use_container_width=True
         )
-
     with col_right:
         st.subheader="Peer Comparison: Risk vs. Profitability"
         # Scatter plot to show outliers
