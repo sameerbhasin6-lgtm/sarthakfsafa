@@ -5,9 +5,7 @@ import math
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 import plotly.express as px
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet
-import tempfile
+
 
 # =====================================================
 # PAGE CONFIG
@@ -218,27 +216,4 @@ st.container(border=True).metric("Implied Credit Rating", rating)
 # =====================================================
 # 9. PDF EXPORT
 # =====================================================
-st.markdown("## 9. Export Credit Committee Memo")
-
-if st.button("Generate PDF"):
-    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-    doc = SimpleDocTemplate(tmp.name)
-    styles = getSampleStyleSheet()
-
-    content = [
-        Paragraph(f"Credit Risk Summary - {company}", styles["Title"]),
-        Spacer(1,12),
-        Paragraph(f"Risk Category: {features.loc[features['Company']==company,'Risk Category'].iloc[0]}", styles["Normal"]),
-        Paragraph(f"Montier C-Score: {c_score}/3", styles["Normal"]),
-        Paragraph(f"Credit Rating: {rating}", styles["Normal"]),
-    ]
-
-    doc.build(content)
-
-    with open(tmp.name, "rb") as f:
-        st.download_button(
-            "Download PDF Credit Memo",
-            f,
-            file_name=f"{company}_credit_memo.pdf"
-        )
 
