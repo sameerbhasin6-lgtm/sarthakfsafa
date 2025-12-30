@@ -141,7 +141,7 @@ tab1, tab2 = st.tabs([
 # TAB 1: SCATTER
 # =====================================================
 with tab1:
-st.markdown("## Revenue vs Discretionary Accruals")
+st.markdown("### Revenue vs Discretionary Accruals")
 
     fig = px.scatter(
         features,
@@ -167,7 +167,7 @@ st.markdown("## Revenue vs Discretionary Accruals")
 # TAB 2: COMPANY TREND
 # =====================================================
 with tab2:
-    st.subheader("Accounting Trend Comparison")
+    st.markdown("### Accounting Trend Comparison")
 
     company = st.selectbox(
         "Select Company",
