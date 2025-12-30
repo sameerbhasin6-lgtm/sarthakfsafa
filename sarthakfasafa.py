@@ -14,29 +14,20 @@ st.set_page_config(
 )
 
 # =====================================================
-# SIDEBAR
+# SIDEBAR CONTROLS
 # =====================================================
 st.sidebar.markdown("## Accounting Risk Analyzer")
-st.sidebar.caption("Synthetic financial risk dashboard")
+st.sidebar.caption("Accrual-based risk analysis")
 
-years = st.sidebar.slider(
-    "Analysis period (years)",
-    min_value=3,
-    max_value=8,
-    value=5
-)
-
+years = st.sidebar.slider("Analysis period (years)", 3, 8, 5)
 manipulation_share = st.sidebar.slider(
-    "Aggressive accounting probability",
-    min_value=0.1,
-    max_value=0.5,
-    value=0.3
+    "Aggressive accounting probability", 0.1, 0.5, 0.3
 )
 
 st.sidebar.markdown("---")
 
 # =====================================================
-# COMPANY NAMES
+# COMPANY LIST
 # =====================================================
 COMPANY_NAMES = [
     "Tata Steel", "Reliance Industries", "Infosys", "HDFC Bank",
@@ -73,11 +64,10 @@ def generate_data(companies, years, manipulation_share):
 
     return pd.DataFrame(rows, columns=["Company", "Year", "Revenue", "ADA"])
 
-
 df = generate_data(COMPANY_NAMES, years, manipulation_share)
 
 # =====================================================
-# FEATURE ENGINEERING
+# FEATURE ENGINEERING + ANOMALY MODEL
 # =====================================================
 features = df.groupby("Company")[["Revenue", "ADA"]].mean().reset_index()
 features["ADA_to_Revenue"] = features["ADA"] / features["Revenue"]
@@ -86,12 +76,7 @@ X = StandardScaler().fit_transform(
     features[["Revenue", "ADA", "ADA_to_Revenue"]]
 )
 
-model = IsolationForest(
-    n_estimators=200,
-    contamination=0.25,
-    random_state=42
-)
-
+model = IsolationForest(n_estimators=200, contamination=0.25, random_state=42)
 features["Flag"] = model.fit_predict(X)
 features["Risk Category"] = features["Flag"].map({-1: "High Risk", 1: "Normal"})
 
@@ -107,26 +92,24 @@ selected_company = st.sidebar.selectbox(
 # HEADER
 # =====================================================
 st.markdown("# Accounting Risk Monitoring Dashboard")
-st.caption("Accrual-based early warning system for aggressive accounting")
+st.caption("Structured 1–5 analysis of discretionary accrual risk")
 st.divider()
 
 # =====================================================
-# KPIs
+# KPI CARDS
 # =====================================================
-k1, k2, k3 = st.columns(3)
+c1, c2, c3 = st.columns(3)
 
-with k1:
+with c1:
     st.container(border=True).metric("Total Companies", len(features))
-
-with k2:
+with c2:
     st.container(border=True).metric(
-        "High Risk Companies",
+        "High Risk Firms",
         (features["Risk Category"] == "High Risk").sum()
     )
-
-with k3:
+with c3:
     st.container(border=True).metric(
-        "Normal Companies",
+        "Normal Firms",
         (features["Risk Category"] == "Normal").sum()
     )
 
@@ -151,28 +134,29 @@ fig1.update_layout(height=500, plot_bgcolor="white")
 st.plotly_chart(fig1, use_container_width=True)
 
 # =====================================================
-# COMPANY DATA
+# SELECTED COMPANY DATA
 # =====================================================
-company_data = df[df["Company"] == selected_company].sort_values("Year")
-base = company_data.iloc[0]
+company_df = df[df["Company"] == selected_company].sort_values("Year")
+base = company_df.iloc[0]
 
-company_data["Revenue Index"] = company_data["Revenue"] / base["Revenue"] * 100
-company_data["ADA Index"] = company_data["ADA"] / base["ADA"] * 100
-company_data["ADA Ratio"] = company_data["ADA"] / company_data["Revenue"]
+company_df["Revenue Index"] = company_df["Revenue"] / base["Revenue"] * 100
+company_df["ADA Index"] = company_df["ADA"] / base["ADA"] * 100
+company_df["ADA Ratio"] = company_df["ADA"] / company_df["Revenue"]
+company_df["ADA YoY"] = company_df["ADA"].pct_change()
 
 # =====================================================
 # 2. JAWS EFFECT
 # =====================================================
-st.markdown("## 2. JAWS Effect: Revenue vs ADA Growth")
+st.markdown("## 2. JAWS Effect: Revenue Growth vs ADA Growth")
 
 fig2 = px.line(
-    company_data,
+    company_df,
     x="Year",
     y=["Revenue Index", "ADA Index"],
     markers=True
 )
 
-fig2.update_layout(height=450, plot_bgcolor="white", hovermode="x unified")
+fig2.update_layout(height=450, hovermode="x unified", plot_bgcolor="white")
 st.plotly_chart(fig2, use_container_width=True)
 
 # =====================================================
@@ -181,7 +165,7 @@ st.plotly_chart(fig2, use_container_width=True)
 st.markdown("## 3. ADA Intensity (ADA / Revenue)")
 
 fig3 = px.bar(
-    company_data,
+    company_df,
     x="Year",
     y="ADA Ratio",
     text_auto=".2%"
@@ -191,16 +175,14 @@ fig3.update_layout(height=400, plot_bgcolor="white")
 st.plotly_chart(fig3, use_container_width=True)
 
 # =====================================================
-# 4. TREND STABILITY
+# 4. EARNINGS STABILITY
 # =====================================================
-st.markdown("## 4. Earnings Quality Stability")
-
-company_data["ADA YoY Change"] = company_data["ADA"].pct_change()
+st.markdown("## 4. Earnings Quality Stability (YoY ADA Change)")
 
 fig4 = px.line(
-    company_data,
+    company_df,
     x="Year",
-    y="ADA YoY Change",
+    y="ADA YoY",
     markers=True
 )
 
@@ -210,13 +192,13 @@ st.plotly_chart(fig4, use_container_width=True)
 # =====================================================
 # 5. PEER POSITIONING
 # =====================================================
-st.markdown("## 5. Peer Positioning")
+st.markdown("## 5. Peer Positioning vs Market")
 
-peer_data = features.copy()
-peer_data["Selected"] = peer_data["Company"] == selected_company
+peer_df = features.copy()
+peer_df["Selected"] = peer_df["Company"] == selected_company
 
 fig5 = px.scatter(
-    peer_data,
+    peer_df,
     x="Revenue",
     y="ADA_to_Revenue",
     size="Revenue",
@@ -231,5 +213,6 @@ st.plotly_chart(fig5, use_container_width=True)
 # =====================================================
 # RAW DATA
 # =====================================================
-with st.expander("View financial data"):
-    st.dataframe(company_data, use_container_width=True)
+with st.expander("View company financials"):
+    st.dataframe(company_df, use_container_width=True)
+
