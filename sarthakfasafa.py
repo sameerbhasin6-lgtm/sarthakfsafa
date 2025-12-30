@@ -17,7 +17,7 @@ st.set_page_config(
 # SIDEBAR
 # =====================================================
 st.sidebar.markdown("## Accounting Risk Analyzer")
-st.sidebar.caption("Synthetic demo for analysis")
+st.sidebar.caption("Synthetic financial risk dashboard")
 
 years = st.sidebar.slider(
     "Analysis period (years)",
@@ -34,15 +34,6 @@ manipulation_share = st.sidebar.slider(
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("Academic use only")
-
-# =====================================================
-# HEADER
-# =====================================================
-st.markdown("# Accounting Risk Monitoring Dashboard")
-st.caption("Detecting aggressive accounting behavior using discretionary accruals")
-
-st.divider()
 
 # =====================================================
 # COMPANY NAMES
@@ -78,17 +69,10 @@ def generate_data(companies, years, manipulation_share):
             if aggressive:
                 ada *= np.random.uniform(1.3, 1.7)
 
-            rows.append([
-                company,
-                year,
-                round(revenue, 2),
-                round(ada, 2)
-            ])
+            rows.append([company, year, revenue, ada])
 
-    return pd.DataFrame(
-        rows,
-        columns=["Company", "Year", "Revenue", "ADA"]
-    )
+    return pd.DataFrame(rows, columns=["Company", "Year", "Revenue", "ADA"])
+
 
 df = generate_data(COMPANY_NAMES, years, manipulation_share)
 
@@ -112,15 +96,27 @@ features["Flag"] = model.fit_predict(X)
 features["Risk Category"] = features["Flag"].map({-1: "High Risk", 1: "Normal"})
 
 # =====================================================
-# KPI SECTION
+# SIDEBAR COMPANY SELECTOR
+# =====================================================
+selected_company = st.sidebar.selectbox(
+    "Select company for deep dive",
+    sorted(features["Company"].unique())
+)
+
+# =====================================================
+# HEADER
+# =====================================================
+st.markdown("# Accounting Risk Monitoring Dashboard")
+st.caption("Accrual-based early warning system for aggressive accounting")
+st.divider()
+
+# =====================================================
+# KPIs
 # =====================================================
 k1, k2, k3 = st.columns(3)
 
 with k1:
-    st.container(border=True).metric(
-        "Total Companies",
-        len(features)
-    )
+    st.container(border=True).metric("Total Companies", len(features))
 
 with k2:
     st.container(border=True).metric(
@@ -137,76 +133,103 @@ with k3:
 st.divider()
 
 # =====================================================
-# TABS
+# 1. RISK MAP
 # =====================================================
-tab1, tab2 = st.tabs(["Risk Map", "Company Deep Dive"])
+st.markdown("## 1. Risk Map: Revenue vs Discretionary Accruals")
 
-# =====================================================
-# TAB 1: RISK MAP
-# =====================================================
-with tab1:
-    st.markdown("## Revenue vs Discretionary Accruals")
+fig1 = px.scatter(
+    features,
+    x="Revenue",
+    y="ADA",
+    color="Risk Category",
+    hover_name="Company",
+    hover_data={"ADA_to_Revenue": ":.2%"},
+    color_discrete_map={"High Risk": "#d62728", "Normal": "#1f77b4"}
+)
 
-    fig = px.scatter(
-        features,
-        x="Revenue",
-        y="ADA",
-        color="Risk Category",
-        hover_name="Company",
-        hover_data={"ADA_to_Revenue": ":.2%"},
-        color_discrete_map={
-            "High Risk": "#d62728",
-            "Normal": "#1f77b4"
-        }
-    )
-
-    fig.update_layout(
-        height=550,
-        plot_bgcolor="white"
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
+fig1.update_layout(height=500, plot_bgcolor="white")
+st.plotly_chart(fig1, use_container_width=True)
 
 # =====================================================
-# TAB 2: COMPANY DEEP DIVE
+# COMPANY DATA
 # =====================================================
-with tab2:
-    st.markdown("## Accounting Trend Analysis")
+company_data = df[df["Company"] == selected_company].sort_values("Year")
+base = company_data.iloc[0]
 
-    company = st.selectbox(
-        "Select company",
-        sorted(features["Company"].unique())
-    )
+company_data["Revenue Index"] = company_data["Revenue"] / base["Revenue"] * 100
+company_data["ADA Index"] = company_data["ADA"] / base["ADA"] * 100
+company_data["ADA Ratio"] = company_data["ADA"] / company_data["Revenue"]
 
-    company_data = df[df["Company"] == company].sort_values("Year")
-    base_year = company_data.iloc[0]
+# =====================================================
+# 2. JAWS EFFECT
+# =====================================================
+st.markdown("## 2. JAWS Effect: Revenue vs ADA Growth")
 
-    company_data["Revenue Index"] = company_data["Revenue"] / base_year["Revenue"] * 100
-    company_data["ADA Index"] = company_data["ADA"] / base_year["ADA"] * 100
+fig2 = px.line(
+    company_data,
+    x="Year",
+    y=["Revenue Index", "ADA Index"],
+    markers=True
+)
 
-    melted = company_data.melt(
-        id_vars="Year",
-        value_vars=["Revenue Index", "ADA Index"],
-        var_name="Metric",
-        value_name="Index (Base = 100)"
-    )
+fig2.update_layout(height=450, plot_bgcolor="white", hovermode="x unified")
+st.plotly_chart(fig2, use_container_width=True)
 
-    fig2 = px.line(
-        melted,
-        x="Year",
-        y="Index (Base = 100)",
-        color="Metric",
-        markers=True
-    )
+# =====================================================
+# 3. ADA INTENSITY
+# =====================================================
+st.markdown("## 3. ADA Intensity (ADA / Revenue)")
 
-    fig2.update_layout(
-        height=500,
-        hovermode="x unified",
-        plot_bgcolor="white"
-    )
+fig3 = px.bar(
+    company_data,
+    x="Year",
+    y="ADA Ratio",
+    text_auto=".2%"
+)
 
-    st.plotly_chart(fig2, use_container_width=True)
+fig3.update_layout(height=400, plot_bgcolor="white")
+st.plotly_chart(fig3, use_container_width=True)
 
-    with st.expander("View financial data"):
-        st.dataframe(company_data, use_container_width=True)
+# =====================================================
+# 4. TREND STABILITY
+# =====================================================
+st.markdown("## 4. Earnings Quality Stability")
 
+company_data["ADA YoY Change"] = company_data["ADA"].pct_change()
+
+fig4 = px.line(
+    company_data,
+    x="Year",
+    y="ADA YoY Change",
+    markers=True
+)
+
+fig4.update_layout(height=400, plot_bgcolor="white")
+st.plotly_chart(fig4, use_container_width=True)
+
+# =====================================================
+# 5. PEER POSITIONING
+# =====================================================
+st.markdown("## 5. Peer Positioning")
+
+peer_data = features.copy()
+peer_data["Selected"] = peer_data["Company"] == selected_company
+
+fig5 = px.scatter(
+    peer_data,
+    x="Revenue",
+    y="ADA_to_Revenue",
+    size="Revenue",
+    color="Selected",
+    hover_name="Company",
+    color_discrete_map={True: "#d62728", False: "#7f8c8d"}
+)
+
+fig5.update_layout(height=500, plot_bgcolor="white")
+st.plotly_chart(fig5, use_container_width=True)
+
+# =====================================================
+# RAW DATA
+# =====================================================
+with st.expander("View financial data"):
+    st.dataframe(company_data, use_container_width=True)
