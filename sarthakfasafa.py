@@ -180,7 +180,7 @@ with tab1:
         # Sort by risk
         top_risks = latest_data.sort_values(by='Risk_Score', ascending=False).head(10)
         
-        # FIXED: Using column_config to avoid Styler bugs
+        # Display DataFrame using Column Config (Safe Method)
         st.dataframe(
             top_risks[['Company Name', 'Risk_Score', 'Status', 'ADA_Ratio', 'Depreciation_Rate']],
             column_config={
@@ -201,7 +201,6 @@ with tab1:
         )
 
     with col_right:
-        # FIXED: Typo corrected (added parentheses)
         st.subheader("Peer Benchmarking") 
         
         fig_scatter = px.scatter(
