@@ -241,3 +241,4 @@ st.plotly_chart(fig_trend, use_container_width=True)
 # =====================================================
 with st.expander("View Financial Data (INR Crore)"):
     st.dataframe(company_data, use_container_width=True)
+
