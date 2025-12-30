@@ -115,7 +115,7 @@ st.plotly_chart(fig, use_container_width=True)
 # =====================================================
 # COMPANY DEEP DIVE
 # =====================================================
-st.subheader(" Company-Level Trend Analysis")
+st.subheader("Company-Level Trend Analysis")
 
 selected_company = st.selectbox(
     "Select a company",
