@@ -9,38 +9,38 @@ import plotly.express as px
 # PAGE CONFIG
 # =====================================================
 st.set_page_config(
-    page_title="AI Accounting Risk Analyzer",
+    page_title="Accounting Risk Dashboard",
     layout="wide"
 )
 
 # =====================================================
 # SIDEBAR
 # =====================================================
-st.sidebar.title("AI Risk Analyzer")
-st.sidebar.caption("Accounting Quality Dashboard")
+st.sidebar.markdown("## Accounting Risk Analyzer")
+st.sidebar.caption("Synthetic demo for analysis")
 
 years = st.sidebar.slider(
-    "Analysis Period (Years)",
+    "Analysis period (years)",
     min_value=3,
     max_value=8,
     value=5
 )
 
-risk_cutoff = st.sidebar.slider(
-    "Aggressive Accounting Share",
+manipulation_share = st.sidebar.slider(
+    "Aggressive accounting probability",
     min_value=0.1,
     max_value=0.5,
     value=0.3
 )
 
 st.sidebar.markdown("---")
-st.sidebar.caption("Synthetic demo for academic use")
+st.sidebar.caption("Academic use only")
 
 # =====================================================
 # HEADER
 # =====================================================
-st.title("Accounting Risk Monitoring Dashboard")
-st.caption("Identifying aggressive accounting behavior using accrual-based signals")
+st.markdown("# Accounting Risk Monitoring Dashboard")
+st.caption("Detecting aggressive accounting behavior using discretionary accruals")
 
 st.divider()
 
@@ -71,19 +71,26 @@ def generate_data(companies, years, manipulation_share):
         base_ada = base_revenue * np.random.uniform(0.06, 0.14)
         aggressive = np.random.rand() < manipulation_share
 
-        for y in year_list:
-            revenue = base_revenue * (1 + np.random.uniform(0.04, 0.14)) ** (y - year_list[0])
-            ada = base_ada * (1 + np.random.uniform(0.03, 0.12)) ** (y - year_list[0])
+        for year in year_list:
+            revenue = base_revenue * (1 + np.random.uniform(0.04, 0.14)) ** (year - year_list[0])
+            ada = base_ada * (1 + np.random.uniform(0.03, 0.12)) ** (year - year_list[0])
 
             if aggressive:
                 ada *= np.random.uniform(1.3, 1.7)
 
-            rows.append([company, y, round(revenue, 2), round(ada, 2)])
+            rows.append([
+                company,
+                year,
+                round(revenue, 2),
+                round(ada, 2)
+            ])
 
-    return pd.DataFrame(rows, columns=["Company", "Year", "Revenue", "ADA"])
+    return pd.DataFrame(
+        rows,
+        columns=["Company", "Year", "Revenue", "ADA"]
+    )
 
-
-df = generate_data(COMPANY_NAMES, years, risk_cutoff)
+df = generate_data(COMPANY_NAMES, years, manipulation_share)
 
 # =====================================================
 # FEATURE ENGINEERING
@@ -105,7 +112,7 @@ features["Flag"] = model.fit_predict(X)
 features["Risk Category"] = features["Flag"].map({-1: "High Risk", 1: "Normal"})
 
 # =====================================================
-# KPI SECTION (VISIBLY DIFFERENT)
+# KPI SECTION
 # =====================================================
 k1, k2, k3 = st.columns(3)
 
@@ -130,18 +137,15 @@ with k3:
 st.divider()
 
 # =====================================================
-# TABS (MAJOR VISUAL CHANGE)
+# TABS
 # =====================================================
-tab1, tab2 = st.tabs([
-    "Risk Map",
-    "Company Deep Dive"
-])
+tab1, tab2 = st.tabs(["Risk Map", "Company Deep Dive"])
 
 # =====================================================
-# TAB 1: SCATTER
+# TAB 1: RISK MAP
 # =====================================================
 with tab1:
-st.markdown("### Revenue vs Discretionary Accruals")
+    st.markdown("## Revenue vs Discretionary Accruals")
 
     fig = px.scatter(
         features,
@@ -164,23 +168,23 @@ st.markdown("### Revenue vs Discretionary Accruals")
     st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================
-# TAB 2: COMPANY TREND
+# TAB 2: COMPANY DEEP DIVE
 # =====================================================
 with tab2:
-    st.markdown("### Accounting Trend Comparison")
+    st.markdown("## Accounting Trend Analysis")
 
     company = st.selectbox(
-        "Select Company",
+        "Select company",
         sorted(features["Company"].unique())
     )
 
-    data = df[df["Company"] == company].sort_values("Year")
-    base = data.iloc[0]
+    company_data = df[df["Company"] == company].sort_values("Year")
+    base_year = company_data.iloc[0]
 
-    data["Revenue Index"] = data["Revenue"] / base["Revenue"] * 100
-    data["ADA Index"] = data["ADA"] / base["ADA"] * 100
+    company_data["Revenue Index"] = company_data["Revenue"] / base_year["Revenue"] * 100
+    company_data["ADA Index"] = company_data["ADA"] / base_year["ADA"] * 100
 
-    melted = data.melt(
+    melted = company_data.melt(
         id_vars="Year",
         value_vars=["Revenue Index", "ADA Index"],
         var_name="Metric",
@@ -203,5 +207,6 @@ with tab2:
 
     st.plotly_chart(fig2, use_container_width=True)
 
-    with st.expander("View Financials"):
-        st.dataframe(data, use_container_width=True)
+    with st.expander("View financial data"):
+        st.dataframe(company_data, use_container_width=True)
+
