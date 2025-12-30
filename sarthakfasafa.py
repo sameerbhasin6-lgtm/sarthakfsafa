@@ -241,3 +241,4 @@ if st.button("Generate PDF"):
             f,
             file_name=f"{company}_credit_memo.pdf"
         )
+
